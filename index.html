@@ -56,7 +56,7 @@
 
       while (result.length < count) {
         const day = date.getDay();
-        if (day === 1 || day === 3) { // Montag oder Mittwoch
+        if (day === 1 || day === 3) {
           result.push(new Date(date));
         }
         date.setDate(date.getDate() + 1);
@@ -91,7 +91,7 @@
       playersToShow.forEach(player => {
         const div = document.createElement("div");
         div.innerHTML = `
-          <label>${player}: 
+          <label>${player}:
             <select id="rating-${player}">
               <option value="1">1 (sehr gut)</option>
               <option value="2">2</option>
