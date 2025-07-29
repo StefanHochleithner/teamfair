@@ -1,32 +1,122 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin – Bewertungen & Teams</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin: Spieler-Auswahl</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    h2 { margin-top: 2em; }
-    .team { margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-    .team h3 { margin: 0 0 10px; }
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background-color: #eef2f7;
+    }
+    h1 {
+      color: #333;
+    }
+    .players {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .players label {
+      display: block;
+      background: #fff;
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+    }
+    select {
+      font-size: 1rem;
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 <body>
-  <h1>📊 Bewertungen</h1>
-  <div id="ratingsDisplay"></div>
+  <h1>🛠 Spieler für Spieltag auswählen</h1>
 
-  <h2>🧑‍🤝‍🧑 Spieler für heutiges Match auswählen</h2>
-  <form id="teamForm">
-    <div id="playerSelection"></div>
-    <button type="submit">Teams generieren</button>
-  </form>
+  <label for="matchday">Spieltag wählen:</label>
+  <select id="matchday"></select>
 
-  <div id="teamResults"></div>
+  <div class="players" id="players-list"></div>
+  <button onclick="saveSelection()">Spieler speichern</button>
 
-  <h2>🧹 Verwaltung</h2>
-  <button onclick="resetRatings()">Alle Bewertungen löschen</button>
+  <script>
+    const allPlayers = [
+      "René", "Sascha", "Tom", "Lev", "Jan", "Willi", "Peter", "Josef",
+      "Stefan", "Patrick T", "Werner", "Nico", "Dili", "Dominic", "Rudi", "Didi"
+    ];
 
-  <script src="data.js"></script>
-  <script src="logic.js"></script>
+    function formatDateWithWeekday(date) {
+      return date.toLocaleDateString('de-AT', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function getNextMatchdays(count = 10) {
+      const result = [];
+      const today = new Date();
+      let date = new Date(today);
+      date.setHours(0,0,0,0);
+
+      while (result.length < count) {
+        const day = date.getDay();
+        if (day === 1 || day === 3) {
+          result.push(new Date(date));
+        }
+        date.setDate(date.getDate() + 1);
+      }
+      return result;
+    }
+
+    function populateMatchdayDropdown() {
+      const dropdown = document.getElementById("matchday");
+      const matchdays = getNextMatchdays();
+      matchdays.forEach(date => {
+        const option = document.createElement("option");
+        const dateStr = date.toISOString().split('T')[0];
+        option.value = dateStr;
+        option.textContent = formatDateWithWeekday(date);
+        dropdown.appendChild(option);
+      });
+    }
+
+    function renderPlayerCheckboxes() {
+      const container = document.getElementById("players-list");
+      container.innerHTML = "";
+      const matchday = document.getElementById("matchday").value;
+      const saved = localStorage.getItem("approved_players_" + matchday);
+      const selected = saved ? JSON.parse(saved) : [];
+
+      allPlayers.forEach(player => {
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = player;
+        if (selected.includes(player)) checkbox.checked = true;
+        label.appendChild(checkbox);
+        label.append(" " + player);
+        container.appendChild(label);
+      });
+    }
+
+    function saveSelection() {
+      const matchday = document.getElementById("matchday").value;
+      const checkboxes = document.querySelectorAll("#players-list input[type=checkbox]");
+      const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+      localStorage.setItem("approved_players_" + matchday, JSON.stringify(selected));
+      alert("Spieler gespeichert für " + matchday);
+    }
+
+    function handleMatchdayChange() {
+      renderPlayerCheckboxes();
+    }
+
+    populateMatchdayDropdown();
+    document.getElementById("matchday").addEventListener("change", handleMatchdayChange);
+    renderPlayerCheckboxes();
+  </script>
 </body>
 </html>
