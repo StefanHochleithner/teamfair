@@ -1,21 +1,19 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <title>⚽ Spieler bewerten</title>
-</head>
-<body>
-  <h1>⚽Spieler bewerten</h1>
-  <form id="ratingForm">
-    <div id="ratingContainer"></div>
-    <button type="submit">Bewertung speichern</button>
-  </form>
-  <p id="status"></p>
+<h1>⚽ Spieler bewerten</h1>
+<p id="spieltag"></p>
 
-  <script src="data.js"></script>
-  <script src="logic.js"></script>
-  <script>
-    renderRatingForm(); // muss NACH dem Laden der DOM-Elemente aufgerufen werden
-  </script>
-</body>
-</html>
+<form id="ratingForm">
+  <div id="ratingContainer"></div>
+  <button type="submit">Bewertung speichern</button>
+</form>
+<p id="status"></p>
+
+<p><a href="admin.html">Zur Admin-Seite (Teams erstellen)</a></p>
+
+<script src="data.js"></script>
+<script src="logic.js"></script>
+<script>
+  window.onload = () => {
+    renderRatingForm();
+    document.getElementById("spieltag").textContent = "Spieltag: " + new Date().toLocaleDateString("de-DE");
+  };
+</script>
