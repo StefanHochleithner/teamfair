@@ -48,10 +48,7 @@
   </div>
 
   <script>
-    const allPlayers = [
-      "René", "Sascha", "Tom", "Lev", "Jan", "Willi", "Peter", "Josef",
-      "Stefan", "Patrick T", "Werner", "Nico", "Dili", "Dominic", "Rudi", "Didi"
-    ];
+   const allPlayers = players.slice(); // players kommt aus data.js
 
     function formatDateWithWeekday(date) {
       return date.toLocaleDateString('de-AT', {
