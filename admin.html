@@ -32,24 +32,25 @@
       box-shadow: 0 0 4px rgba(0,0,0,0.1);
     }
   </style>
-<script src="data.js"></script>  
+  <script src="data.js"></script>
 </head>
 <body>
   <h1>⚙️ Spieler für Spieltag auswählen</h1>
 
   <label for="matchday">Spieltag wählen:</label>
   <select id="matchday"></select>
+  <button onclick="addManualMatchday()">➕ Montag manuell hinzufügen</button>
 
   <div id="player-list"></div>
   <button onclick="saveSelection()">✅ Auswahl speichern</button>
 
   <div class="teams">
-    <button onclick="generateTeams()">🎲 Spieler für heutiges Match auswählen</button>
+    <button onclick="generateTeams()">🎲 Spieler für ausgewählten Spieltag</button>
     <div id="teams-output"></div>
   </div>
 
   <script>
-   const allPlayers = players.slice(); // players kommt aus data.js
+    let allPlayers = players.slice(); // players kommt aus data.js
 
     function formatDateWithWeekday(date) {
       return date.toLocaleDateString('de-AT', {
@@ -64,7 +65,7 @@
       const result = [];
       const today = new Date();
       let date = new Date(today);
-      date.setDate(date.getDate() - 7);  // Starte 7 Tage früher, z.B. letzter Montag
+      date.setDate(date.getDate() - 7); // z. B. vergangener Montag
       date.setHours(0, 0, 0, 0);
 
       while (result.length < count) {
@@ -81,12 +82,39 @@
       const dropdown = document.getElementById("matchday");
       dropdown.innerHTML = "";
       const matchdays = getNextMatchdays();
+
       matchdays.forEach(date => {
         const option = document.createElement("option");
         option.value = date.toISOString().split('T')[0];
         option.textContent = formatDateWithWeekday(date);
         dropdown.appendChild(option);
       });
+    }
+
+    function addManualMatchday() {
+      const dropdown = document.getElementById("matchday");
+
+      const manualDate = new Date();
+      manualDate.setDate(manualDate.getDate() - 8); // z. B. vergangener Montag
+      manualDate.setHours(0, 0, 0, 0);
+      while (manualDate.getDay() !== 1) {
+        manualDate.setDate(manualDate.getDate() - 1);
+      }
+
+      const iso = manualDate.toISOString().split('T')[0];
+      const label = formatDateWithWeekday(manualDate);
+
+      const exists = Array.from(dropdown.options).some(opt => opt.value === iso);
+      if (!exists) {
+        const option = document.createElement("option");
+        option.value = iso;
+        option.textContent = label + " (manuell)";
+        dropdown.appendChild(option);
+      }
+
+      dropdown.value = iso;
+      renderPlayerCheckboxes();
+      document.getElementById("teams-output").innerHTML = "";
     }
 
     function renderPlayerCheckboxes() {
@@ -125,7 +153,6 @@
         return;
       }
 
-      // Zufällig mischen
       const shuffled = [...players].sort(() => Math.random() - 0.5);
       const half = Math.ceil(shuffled.length / 2);
       const teamA = shuffled.slice(0, half);
