@@ -48,25 +48,25 @@
     }
 
     function getNextMatchdays(count = 10) {
-  const result = [];
-  const today = new Date();
-  let date = new Date(today);
-  date.setDate(date.getDate() - 7);  // Starte 7 Tage früher, z.B. letzter Montag
-  date.setHours(0, 0, 0, 0);
+      const result = [];
+      const today = new Date();
+      let date = new Date(today);
+      date.setDate(date.getDate() - 7);  // Starte 7 Tage früher, z.B. letzter Montag
+      date.setHours(0, 0, 0, 0);
 
-  while (result.length < count) {
-     const day = date.getDay();
-  if (day === 1 || day === 3) {
-    result.push(new Date(date));
-  }
-  date.setDate(date.getDate() + 1);
-}
-  }
-  return result;
-}
+      while (result.length < count) {
+        const day = date.getDay();
+        if (day === 1 || day === 3) { // Montag oder Mittwoch
+          result.push(new Date(date));
+        }
+        date.setDate(date.getDate() + 1);
+      }
+      return result;
+    }
 
     function populateMatchdayDropdown() {
       const dropdown = document.getElementById("matchday");
+      dropdown.innerHTML = "";
       const matchdays = getNextMatchdays();
       matchdays.forEach(date => {
         const option = document.createElement("option");
