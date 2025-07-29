@@ -2,97 +2,241 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TeamFair Übersicht</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>⚽ TeamFair: Spieler bewerten & Teams</title>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #f4f4f4;
-      padding: 2rem;
+      font-family: Arial, sans-serif;
+      max-width: 480px;
+      margin: auto;
+      padding: 1rem;
+      background: #f7f9fc;
     }
-    h1 {
+    h1, h2 {
+      text-align: center;
       color: #222;
     }
-    .day-section {
-      background: white;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    label {
+      display: block;
+      margin: 0.6rem 0 0.2rem;
+      font-weight: bold;
     }
-    .team {
-      margin-top: 0.5rem;
+    select, button {
+      width: 100%;
       padding: 0.5rem;
-      background-color: #eef;
-      border-radius: 0.3rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
-    .team h3 {
-      margin-top: 0;
+    .player-rating {
+      background: white;
+      padding: 0.6rem 1rem;
+      margin-bottom: 0.4rem;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .player-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    select.rating-select {
+      width: 60px;
+      font-size: 1rem;
+    }
+    #teams {
+      margin-top: 1.5rem;
+      background: #e3f2fd;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    #teams > div {
+      margin-bottom: 1rem;
+    }
+    #teams strong {
+      font-size: 1.2rem;
+      color: #0d47a1;
     }
   </style>
   <script src="data.js"></script>
 </head>
 <body>
-  <h1>⚽ TeamFair Übersicht</h1>
-  <div id="output"></div>
 
-  <script>
-    function formatDateLabel(iso) {
-      const date = new Date(iso);
-      return date.toLocaleDateString("de-AT", {
-        weekday: "long",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric"
-      });
-    }
+  <h1>⚽ Spieler bewerten & Teams bilden</h1>
 
-    function listAllSavedMatchdays() {
-      const output = document.getElementById("output");
-      output.innerHTML = "";
+  <label for="matchday">Spieltag wählen:</label>
+  <select id="matchday"></select>
 
-      const keys = Object.keys(localStorage)
-        .filter(k => k.startsWith("approved_players_"))
-        .sort()
-        .reverse();
+  <div id="player-ratings"></div>
 
-      if (keys.length === 0) {
-        output.innerHTML = "<p>⛔ Noch keine gespeicherten Spieltage.</p>";
-        return;
+  <button id="saveBtn">Bewertung speichern</button>
+  <button id="teamBtn">Teams generieren</button>
+
+  <div id="teams"></div>
+
+<script>
+  // Funktion: Spieltage ab 28.07.2025 (Montags, Mittwochs)
+  function getMatchdays(count = 20, startDate = new Date('2025-07-28')) {
+    const days = [];
+    let date = new Date(startDate);
+    date.setHours(0,0,0,0);
+    while (days.length < count) {
+      if (date.getDay() === 1 || date.getDay() === 3) { // Montag oder Mittwoch
+        days.push(new Date(date));
       }
+      date.setDate(date.getDate() + 1);
+    }
+    return days;
+  }
 
-      keys.forEach(key => {
-        const isoDate = key.replace("approved_players_", "");
-        const dateLabel = formatDateLabel(isoDate);
-        const players = JSON.parse(localStorage.getItem(key));
+  // Format Datum für Anzeige: Wochentag, dd.mm.yyyy
+  function formatDate(date) {
+    return date.toLocaleDateString('de-AT', { weekday: 'long', day:'2-digit', month:'2-digit', year:'numeric' });
+  }
 
-        const container = document.createElement("div");
-        container.className = "day-section";
-        container.innerHTML = `
-          <h2>${dateLabel}</h2>
-          <p><strong>Spieler:</strong> ${players.join(", ")}</p>
-        `;
+  // Lade Spieltage ins Dropdown
+  function populateMatchdays() {
+    const select = document.getElementById('matchday');
+    select.innerHTML = '';
+    const matchdays = getMatchdays();
+    matchdays.forEach(day => {
+      const option = document.createElement('option');
+      option.value = day.toISOString().slice(0,10);
+      option.textContent = formatDate(day);
+      select.appendChild(option);
+    });
+  }
 
-        if (players.length >= 2) {
-          const shuffled = [...players].sort(() => Math.random() - 0.5);
-          const half = Math.ceil(shuffled.length / 2);
-          const teamA = shuffled.slice(0, half);
-          const teamB = shuffled.slice(half);
+  // Spieler laden, die für den Spieltag im Admin ausgewählt wurden
+  function getPlayersForMatchday(dateISO) {
+    const raw = localStorage.getItem('approved_players_' + dateISO);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
 
-          const teamDiv = document.createElement("div");
-          teamDiv.className = "team";
-          teamDiv.innerHTML = `
-            <h3>Team A:</h3><p>${teamA.join(", ")}</p>
-            <h3>Team B:</h3><p>${teamB.join(", ")}</p>
-          `;
-          container.appendChild(teamDiv);
-        }
+  // Ratings für Spieltag laden
+  function loadRatings(dateISO) {
+    const raw = localStorage.getItem('ratings_' + dateISO);
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }
 
-        output.appendChild(container);
-      });
+  // Anzeigen der Spieler + Bewertungsselect
+  function renderPlayerRatings() {
+    const dateISO = document.getElementById('matchday').value;
+    const players = getPlayersForMatchday(dateISO);
+    const ratings = loadRatings(dateISO);
+    const container = document.getElementById('player-ratings');
+    container.innerHTML = '';
+
+    if (players.length === 0) {
+      container.innerHTML = '<p>⚠️ Für diesen Spieltag wurden noch keine Spieler ausgewählt.</p>';
+      return;
     }
 
-    listAllSavedMatchdays();
-  </script>
+    players.forEach(name => {
+      const div = document.createElement('div');
+      div.className = 'player-rating';
+      div.innerHTML = `
+        <div class="player-name">${name}</div>
+        <select class="rating-select" id="rating-${name}">
+          <option value="1" ${ratings[name]==1 ? 'selected' : ''}>1 (sehr gut)</option>
+          <option value="2" ${ratings[name]==2 ? 'selected' : ''}>2</option>
+          <option value="3" ${(!ratings[name] || ratings[name]==3) ? 'selected' : ''}>3</option>
+          <option value="4" ${ratings[name]==4 ? 'selected' : ''}>4</option>
+          <option value="5" ${ratings[name]==5 ? 'selected' : ''}>5 (schlecht)</option>
+        </select>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // Bewertungen speichern
+  function saveRatings() {
+    const dateISO = document.getElementById('matchday').value;
+    const players = getPlayersForMatchday(dateISO);
+    if (players.length === 0) {
+      alert('Keine Spieler für diesen Spieltag ausgewählt.');
+      return;
+    }
+    const ratings = {};
+    let valid = true;
+
+    players.forEach(name => {
+      const sel = document.getElementById('rating-' + name);
+      if (!sel) return;
+      const val = parseInt(sel.value);
+      if (isNaN(val) || val < 1 || val > 5) valid = false;
+      ratings[name] = val;
+    });
+
+    if (!valid) {
+      alert('Bitte alle Spieler bewerten mit Werten zwischen 1 und 5.');
+      return;
+    }
+
+    localStorage.setItem('ratings_' + dateISO, JSON.stringify(ratings));
+    alert('✅ Bewertungen gespeichert!');
+  }
+
+  // Teams bilden: balanciert nach Bewertungen
+  function generateTeams() {
+    const dateISO = document.getElementById('matchday').value;
+    const ratings = loadRatings(dateISO);
+    const players = Object.keys(ratings);
+
+    if (players.length < 2) {
+      alert('Mindestens 2 Spieler mit Bewertungen nötig, um Teams zu bilden.');
+      return;
+    }
+
+    // Sortiere Spieler nach Bewertung (1=best, 5=schlecht)
+    players.sort((a,b) => ratings[a] - ratings[b]);
+
+    // Fairer Team-Split: Spieler reihum auf Teams verteilen
+    const teamA = [];
+    const teamB = [];
+    players.forEach((player, i) => {
+      if (i % 2 === 0) teamA.push(player);
+      else teamB.push(player);
+    });
+
+    // Ausgabe
+    const container = document.getElementById('teams');
+    container.innerHTML = `
+      <div><strong>Team A:</strong><br>${teamA.join('<br>')}</div>
+      <div><strong>Team B:</strong><br>${teamB.join('<br>')}</div>
+    `;
+  }
+
+  document.getElementById('matchday').addEventListener('change', () => {
+    renderPlayerRatings();
+    document.getElementById('teams').innerHTML = '';
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', saveRatings);
+  document.getElementById('teamBtn').addEventListener('click', generateTeams);
+
+  // Buttons: Alternative EventListener wenn nicht via IDs
+  document.getElementById('saveBtn').onclick = saveRatings;
+  document.getElementById('teamBtn').onclick = generateTeams;
+
+  // Initial
+  populateMatchdays();
+  renderPlayerRatings();
+
+</script>
+
 </body>
 </html>
