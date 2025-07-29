@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>⚽ Spieler bewerten</title>
+</head>
+<body>
+  <h1>⚽Spieler bewerten</h1>
+  <form id="ratingForm">
+    <div id="ratingContainer"></div>
+    <button type="submit">Bewertung speichern</button>
+  </form>
+  <p id="status"></p>
+
+  <script src="data.js"></script>
+  <script src="logic.js"></script>
+  <script>
+    renderRatingForm(); // muss NACH dem Laden der DOM-Elemente aufgerufen werden
+  </script>
+</body>
+</html>

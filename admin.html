@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin – Bewertungen & Teams</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h2 { margin-top: 2em; }
+    .team { margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+    .team h3 { margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+  <h1>📊 Bewertungen</h1>
+  <div id="ratingsDisplay"></div>
+
+  <h2>🧑‍🤝‍🧑 Spieler für heutiges Match auswählen</h2>
+  <form id="teamForm">
+    <div id="playerSelection"></div>
+    <button type="submit">Teams generieren</button>
+  </form>
+
+  <div id="teamResults"></div>
+
+  <h2>🧹 Verwaltung</h2>
+  <button onclick="resetRatings()">Alle Bewertungen löschen</button>
+
+  <script src="data.js"></script>
+  <script src="logic.js"></script>
+</body>
+</html>
