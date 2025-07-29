@@ -2,133 +2,97 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spieler bewerten</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TeamFair Übersicht</title>
   <style>
     body {
       font-family: sans-serif;
+      background-color: #f4f4f4;
       padding: 2rem;
-      background-color: #f9f9f9;
     }
     h1 {
-      color: #333;
+      color: #222;
     }
-    label, select {
-      font-size: 1rem;
+    .day-section {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
     }
-    .ratings {
-      margin-top: 1rem;
+    .team {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background-color: #eef;
+      border-radius: 0.3rem;
     }
-    .ratings div {
-      margin-bottom: 0.5rem;
-    }
-    button {
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
+    .team h3 {
+      margin-top: 0;
     }
   </style>
+  <script src="data.js"></script>
 </head>
 <body>
-  <h1>⚽ Spieler bewerten</h1>
-
-  <label for="matchday">Spieltag wählen:</label>
-  <select id="matchday"></select>
-
-  <div class="ratings" id="rating-form"></div>
-  <button onclick="saveRatings()">Bewertung speichern</button>
+  <h1>⚽ TeamFair Übersicht</h1>
+  <div id="output"></div>
 
   <script>
-    const allPlayers = [
-      "René", "Sascha", "Tom", "Lev", "Jan", "Willi", "Peter", "Josef",
-      "Stefan", "Patrick T", "Werner", "Nico", "Dili", "Dominic", "Rudi", "Didi"
-    ];
-
-    function formatDateWithWeekday(date) {
-      return date.toLocaleDateString('de-AT', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-    }
-
-    function getNextMatchdays(count = 10) {
-      const result = [];
-      const today = new Date();
-      let date = new Date(today);
-      date.setDate(date.getDate() - 7);  // Starte 7 Tage früher, z.B. letzter Montag
-      date.setHours(0, 0, 0, 0);
-
-      while (result.length < count) {
-        const day = date.getDay();
-        if (day === 1 || day === 3) {
-          result.push(new Date(date));
-        }
-        date.setDate(date.getDate() + 1);
-      }
-      return result;
-    }
-
-    function populateMatchdayDropdown() {
-      const dropdown = document.getElementById("matchday");
-      dropdown.innerHTML = "";
-      const matchdays = getNextMatchdays();
-      matchdays.forEach(date => {
-        const option = document.createElement("option");
-        option.value = date.toISOString().split('T')[0];
-        option.textContent = formatDateWithWeekday(date);
-        dropdown.appendChild(option);
+    function formatDateLabel(iso) {
+      const date = new Date(iso);
+      return date.toLocaleDateString("de-AT", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
       });
     }
 
-    function renderRatingForm() {
-      const form = document.getElementById("rating-form");
-      form.innerHTML = "";
-      const matchday = document.getElementById("matchday").value;
-      const stored = localStorage.getItem("approved_players_" + matchday);
-      const playersToShow = stored ? JSON.parse(stored) : [];
+    function listAllSavedMatchdays() {
+      const output = document.getElementById("output");
+      output.innerHTML = "";
 
-      if (playersToShow.length === 0) {
-        form.innerHTML = "<p>❌ Für diesen Spieltag wurden noch keine Spieler im Admin-Bereich ausgewählt.</p>";
+      const keys = Object.keys(localStorage)
+        .filter(k => k.startsWith("approved_players_"))
+        .sort()
+        .reverse();
+
+      if (keys.length === 0) {
+        output.innerHTML = "<p>⛔ Noch keine gespeicherten Spieltage.</p>";
         return;
       }
 
-      playersToShow.forEach(player => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <label>${player}:
-            <select id="rating-${player}">
-              <option value="1">1 (sehr gut)</option>
-              <option value="2">2</option>
-              <option value="3" selected>3</option>
-              <option value="4">4</option>
-              <option value="5">5 (schlecht)</option>
-            </select>
-          </label>
+      keys.forEach(key => {
+        const isoDate = key.replace("approved_players_", "");
+        const dateLabel = formatDateLabel(isoDate);
+        const players = JSON.parse(localStorage.getItem(key));
+
+        const container = document.createElement("div");
+        container.className = "day-section";
+        container.innerHTML = `
+          <h2>${dateLabel}</h2>
+          <p><strong>Spieler:</strong> ${players.join(", ")}</p>
         `;
-        form.appendChild(div);
-      });
-    }
 
-    function saveRatings() {
-      const matchday = document.getElementById("matchday").value;
-      const ratings = {};
-      const stored = localStorage.getItem("approved_players_" + matchday);
-      const playersToSave = stored ? JSON.parse(stored) : [];
+        if (players.length >= 2) {
+          const shuffled = [...players].sort(() => Math.random() - 0.5);
+          const half = Math.ceil(shuffled.length / 2);
+          const teamA = shuffled.slice(0, half);
+          const teamB = shuffled.slice(half);
 
-      playersToSave.forEach(player => {
-        const select = document.getElementById(`rating-${player}`);
-        if (select) {
-          ratings[player] = parseInt(select.value);
+          const teamDiv = document.createElement("div");
+          teamDiv.className = "team";
+          teamDiv.innerHTML = `
+            <h3>Team A:</h3><p>${teamA.join(", ")}</p>
+            <h3>Team B:</h3><p>${teamB.join(", ")}</p>
+          `;
+          container.appendChild(teamDiv);
         }
+
+        output.appendChild(container);
       });
-
-      localStorage.setItem("ratings_" + matchday, JSON.stringify(ratings));
-      alert("Bewertung gespeichert.");
     }
 
-    function handleMatchdayChange() {
-      renderRatingForm();
-    }
-
-    populateMatchdayDropdown();
-    document.getElementById("matchday").addEventListener("change", handleMatchdayChange);
-    renderRatingForm();
+    listAllSavedMatchdays();
   </script>
 </body>
 </html>
