@@ -1,65 +1,68 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin: Spieler-Auswahl</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin: Spieler auswählen</title>
   <style>
     body {
       font-family: sans-serif;
       padding: 2rem;
-      background-color: #eef2f7;
+      background-color: #f4f4f4;
     }
-    h1 {
+    h1, h2 {
       color: #333;
     }
-    .players {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-    .players label {
+    label {
       display: block;
-      background: #fff;
-      padding: 0.5rem;
-      border-radius: 4px;
-      border: 1px solid #ccc;
+      margin-top: 0.5rem;
     }
     button {
       margin-top: 1rem;
       padding: 0.5rem 1rem;
     }
-    select {
-      font-size: 1rem;
-      margin-top: 0.5rem;
+    .teams {
+      margin-top: 2rem;
+    }
+    .team {
+      padding: 1rem;
+      background: #fff;
+      margin-bottom: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
     }
   </style>
 </head>
 <body>
-  <h1>🛠 Spieler für Spieltag auswählen</h1>
+  <h1>⚙️ Spieler für Spieltag auswählen</h1>
 
   <label for="matchday">Spieltag wählen:</label>
   <select id="matchday"></select>
 
-  <div class="players" id="players-list"></div>
-  <button onclick="saveSelection()">Spieler speichern</button>
+  <div id="player-list"></div>
+  <button onclick="saveSelection()">✅ Auswahl speichern</button>
 
+  <div class="teams">
+    <button onclick="generateTeams()">🎲 Spieler für heutiges Match auswählen</button>
+    <div id="teams-output"></div>
+  </div>
+
+  <script src="data.js"></script>
   <script>
-    const allPlayers = [
-      "René", "Sascha", "Tom", "Lev", "Jan", "Willi", "Peter", "Josef",
-      "Stefan", "Patrick T", "Werner", "Nico", "Dili", "Dominic", "Rudi", "Didi"
-    ];
-
     function formatDateWithWeekday(date) {
-      return date.toLocaleDateString('de-AT', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      return date.toLocaleDateString('de-AT', {
+        weekday: 'long',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
     }
 
     function getNextMatchdays(count = 10) {
       const result = [];
       const today = new Date();
       let date = new Date(today);
-      date.setHours(0,0,0,0);
+      date.setHours(0, 0, 0, 0);
 
       while (result.length < count) {
         const day = date.getDay();
@@ -76,46 +79,66 @@
       const matchdays = getNextMatchdays();
       matchdays.forEach(date => {
         const option = document.createElement("option");
-        const dateStr = date.toISOString().split('T')[0];
-        option.value = dateStr;
+        option.value = date.toISOString().split('T')[0];
         option.textContent = formatDateWithWeekday(date);
         dropdown.appendChild(option);
       });
     }
 
     function renderPlayerCheckboxes() {
-      const container = document.getElementById("players-list");
+      const container = document.getElementById("player-list");
       container.innerHTML = "";
+
       const matchday = document.getElementById("matchday").value;
-      const saved = localStorage.getItem("approved_players_" + matchday);
-      const selected = saved ? JSON.parse(saved) : [];
+      const stored = localStorage.getItem("approved_players_" + matchday);
+      const selectedPlayers = stored ? JSON.parse(stored) : [];
 
       allPlayers.forEach(player => {
         const label = document.createElement("label");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.value = player;
-        if (selected.includes(player)) checkbox.checked = true;
-        label.appendChild(checkbox);
-        label.append(" " + player);
+        label.innerHTML = `
+          <input type="checkbox" name="player" value="${player}" ${selectedPlayers.includes(player) ? "checked" : ""} />
+          ${player}
+        `;
         container.appendChild(label);
       });
     }
 
     function saveSelection() {
       const matchday = document.getElementById("matchday").value;
-      const checkboxes = document.querySelectorAll("#players-list input[type=checkbox]");
-      const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+      const checkboxes = document.querySelectorAll('input[name="player"]:checked');
+      const selected = Array.from(checkboxes).map(cb => cb.value);
       localStorage.setItem("approved_players_" + matchday, JSON.stringify(selected));
-      alert("Spieler gespeichert für " + matchday);
+      alert("✅ Auswahl gespeichert.");
     }
 
-    function handleMatchdayChange() {
-      renderPlayerCheckboxes();
+    function generateTeams() {
+      const matchday = document.getElementById("matchday").value;
+      const stored = localStorage.getItem("approved_players_" + matchday);
+      const players = stored ? JSON.parse(stored) : [];
+
+      if (players.length < 2) {
+        document.getElementById("teams-output").innerHTML = "<p>❗ Mindestens 2 Spieler nötig.</p>";
+        return;
+      }
+
+      // Zufällig mischen
+      const shuffled = [...players].sort(() => Math.random() - 0.5);
+      const half = Math.ceil(shuffled.length / 2);
+      const teamA = shuffled.slice(0, half);
+      const teamB = shuffled.slice(half);
+
+      document.getElementById("teams-output").innerHTML = `
+        <div class="team"><strong>Team A:</strong><br>${teamA.join("<br>")}</div>
+        <div class="team"><strong>Team B:</strong><br>${teamB.join("<br>")}</div>
+      `;
     }
+
+    document.getElementById("matchday").addEventListener("change", () => {
+      renderPlayerCheckboxes();
+      document.getElementById("teams-output").innerHTML = "";
+    });
 
     populateMatchdayDropdown();
-    document.getElementById("matchday").addEventListener("change", handleMatchdayChange);
     renderPlayerCheckboxes();
   </script>
 </body>
