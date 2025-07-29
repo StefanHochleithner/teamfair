@@ -2,175 +2,143 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin: Spieler auswählen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin: Spieler für Spieltag auswählen</title>
   <style>
     body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+      max-width: 480px;
+      margin: auto;
+      padding: 1rem;
+      background: #f4f6f8;
     }
-    h1, h2 {
-      color: #333;
+    h1 {
+      text-align: center;
+      color: #222;
     }
     label {
       display: block;
-      margin-top: 0.5rem;
+      margin: 0.4rem 0;
+      cursor: pointer;
+    }
+    #player-list {
+      background: white;
+      border-radius: 6px;
+      padding: 1rem;
+      max-height: 350px;
+      overflow-y: auto;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
     }
     button {
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
+      width: 100%;
+      padding: 0.7rem;
+      font-size: 1.1rem;
+      border-radius: 6px;
+      border: none;
+      background-color: #1976d2;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
     }
-    .teams {
-      margin-top: 2rem;
+    button:hover {
+      background-color: #1565c0;
     }
-    .team {
-      padding: 1rem;
-      background: #fff;
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
       margin-bottom: 1rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 0 4px rgba(0,0,0,0.1);
     }
   </style>
   <script src="data.js"></script>
 </head>
 <body>
-  <h1>⚙️ Spieler für Spieltag auswählen</h1>
+
+  <h1>⚙️ Admin: Spieler für Spieltag auswählen</h1>
 
   <label for="matchday">Spieltag wählen:</label>
   <select id="matchday"></select>
-  <button onclick="addManualMatchday()">➕ Montag manuell hinzufügen</button>
 
   <div id="player-list"></div>
-  <button onclick="saveSelection()">✅ Auswahl speichern</button>
 
-  <div class="teams">
-    <button onclick="generateTeams()">🎲 Spieler für ausgewählten Spieltag</button>
-    <div id="teams-output"></div>
-  </div>
+  <button id="saveBtn">✅ Auswahl speichern</button>
 
   <script>
-    let allPlayers = players.slice(); // players kommt aus data.js
-
-    function formatDateWithWeekday(date) {
-      return date.toLocaleDateString('de-AT', {
-        weekday: 'long',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    }
-
-    function getNextMatchdays(count = 10) {
-      const result = [];
-      const today = new Date();
-      let date = new Date(today);
-      date.setDate(date.getDate() - 7); // z. B. vergangener Montag
-      date.setHours(0, 0, 0, 0);
-
-      while (result.length < count) {
-        const day = date.getDay();
-        if (day === 1 || day === 3) { // Montag oder Mittwoch
-          result.push(new Date(date));
+    // Spieltage ab 28.07.2025 (Mo & Mi)
+    function getMatchdays(count = 20, startDate = new Date('2025-07-28')) {
+      const days = [];
+      let date = new Date(startDate);
+      date.setHours(0,0,0,0);
+      while (days.length < count) {
+        if (date.getDay() === 1 || date.getDay() === 3) { // Mo oder Mi
+          days.push(new Date(date));
         }
         date.setDate(date.getDate() + 1);
       }
-      return result;
+      return days;
     }
 
-    function populateMatchdayDropdown() {
-      const dropdown = document.getElementById("matchday");
-      dropdown.innerHTML = "";
-      const matchdays = getNextMatchdays();
+    // Datum formatieren
+    function formatDate(date) {
+      return date.toLocaleDateString('de-AT', { weekday: 'long', day:'2-digit', month:'2-digit', year:'numeric' });
+    }
 
-      matchdays.forEach(date => {
-        const option = document.createElement("option");
-        option.value = date.toISOString().split('T')[0];
-        option.textContent = formatDateWithWeekday(date);
-        dropdown.appendChild(option);
+    // Dropdown mit Spieltagen füllen
+    function populateMatchdays() {
+      const select = document.getElementById('matchday');
+      select.innerHTML = '';
+      const matchdays = getMatchdays();
+      matchdays.forEach(day => {
+        const option = document.createElement('option');
+        option.value = day.toISOString().slice(0,10);
+        option.textContent = formatDate(day);
+        select.appendChild(option);
       });
     }
 
-    function addManualMatchday() {
-      const dropdown = document.getElementById("matchday");
-
-      const manualDate = new Date();
-      manualDate.setDate(manualDate.getDate() - 8); // z. B. vergangener Montag
-      manualDate.setHours(0, 0, 0, 0);
-      while (manualDate.getDay() !== 1) {
-        manualDate.setDate(manualDate.getDate() - 1);
+    // Spieler-Checkboxen rendern, mit gespeicherter Auswahl
+    function renderPlayerList() {
+      const container = document.getElementById('player-list');
+      container.innerHTML = '';
+      const matchday = document.getElementById('matchday').value;
+      let savedPlayers = [];
+      try {
+        const raw = localStorage.getItem('approved_players_' + matchday);
+        savedPlayers = raw ? JSON.parse(raw) : [];
+      } catch {
+        savedPlayers = [];
       }
 
-      const iso = manualDate.toISOString().split('T')[0];
-      const label = formatDateWithWeekday(manualDate);
-
-      const exists = Array.from(dropdown.options).some(opt => opt.value === iso);
-      if (!exists) {
-        const option = document.createElement("option");
-        option.value = iso;
-        option.textContent = label + " (manuell)";
-        dropdown.appendChild(option);
-      }
-
-      dropdown.value = iso;
-      renderPlayerCheckboxes();
-      document.getElementById("teams-output").innerHTML = "";
-    }
-
-    function renderPlayerCheckboxes() {
-      const container = document.getElementById("player-list");
-      container.innerHTML = "";
-
-      const matchday = document.getElementById("matchday").value;
-      const stored = localStorage.getItem("approved_players_" + matchday);
-      const selectedPlayers = stored ? JSON.parse(stored) : [];
-
-      allPlayers.forEach(player => {
-        const label = document.createElement("label");
+      allPlayers.forEach(name => {
+        const label = document.createElement('label');
         label.innerHTML = `
-          <input type="checkbox" name="player" value="${player}" ${selectedPlayers.includes(player) ? "checked" : ""} />
-          ${player}
+          <input type="checkbox" value="${name}" ${savedPlayers.includes(name) ? 'checked' : ''} />
+          ${name}
         `;
         container.appendChild(label);
       });
     }
 
+    // Auswahl speichern
     function saveSelection() {
-      const matchday = document.getElementById("matchday").value;
-      const checkboxes = document.querySelectorAll('input[name="player"]:checked');
+      const matchday = document.getElementById('matchday').value;
+      const checkboxes = document.querySelectorAll('#player-list input[type="checkbox"]:checked');
       const selected = Array.from(checkboxes).map(cb => cb.value);
-      localStorage.setItem("approved_players_" + matchday, JSON.stringify(selected));
-      alert("✅ Auswahl gespeichert.");
+      localStorage.setItem('approved_players_' + matchday, JSON.stringify(selected));
+      alert('✅ Spieler-Auswahl gespeichert für ' + matchday);
     }
 
-    function generateTeams() {
-      const matchday = document.getElementById("matchday").value;
-      const stored = localStorage.getItem("approved_players_" + matchday);
-      const players = stored ? JSON.parse(stored) : [];
+    // Event-Listener Setup
+    document.getElementById('matchday').addEventListener('change', renderPlayerList);
+    document.getElementById('saveBtn').addEventListener('click', saveSelection);
 
-      if (players.length < 2) {
-        document.getElementById("teams-output").innerHTML = "<p>❗ Mindestens 2 Spieler nötig.</p>";
-        return;
-      }
-
-      const shuffled = [...players].sort(() => Math.random() - 0.5);
-      const half = Math.ceil(shuffled.length / 2);
-      const teamA = shuffled.slice(0, half);
-      const teamB = shuffled.slice(half);
-
-      document.getElementById("teams-output").innerHTML = `
-        <div class="team"><strong>Team A:</strong><br>${teamA.join("<br>")}</div>
-        <div class="team"><strong>Team B:</strong><br>${teamB.join("<br>")}</div>
-      `;
-    }
-
-    document.getElementById("matchday").addEventListener("change", () => {
-      renderPlayerCheckboxes();
-      document.getElementById("teams-output").innerHTML = "";
-    });
-
-    populateMatchdayDropdown();
-    renderPlayerCheckboxes();
+    // Init
+    populateMatchdays();
+    renderPlayerList();
   </script>
+
 </body>
 </html>
