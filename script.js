@@ -1,4 +1,4 @@
-const scriptURL = "https://script.google.com/macros/s/DEINE_SCRIPT_ID_HIER/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbzMxNlPal3W6ydsgk_68uDONVLkG8jnHeWA7bCw49ua6qRhtUfUwQTuJJa5Z3JUDDK-4w/exec";
 
 // Hilfsfunktion: nächste 20 Montage ab 28.07.2025 erzeugen
 function getNextMondays(count, startDate = new Date("2025-07-28")) {
