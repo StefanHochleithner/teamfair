@@ -1,4 +1,4 @@
-const scriptURL = "https://script.google.com/macros/s/AKfycbzMxNlPal3W6ydsgk_68uDONVLkG8jnHeWA7bCw49ua6qRhtUfUwQTuJJa5Z3JUDDK-4w/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbxMU3e7JAEHUZT-NJF3e1XjObNLQ--QqpkDzPOKViGuWxonr3XCSdT9UxY6NDfxMutNhw/exec";
 
 function getNextMondays(count, startDate = new Date("2025-07-28")) {
   const mondays = [];
