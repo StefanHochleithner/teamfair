@@ -101,7 +101,7 @@
       const ratings = await response.json();
 
       container.innerHTML = "";
-      players.forEach(name => {
+      allPlayers.forEach(name => {
         const div = document.createElement("div");
         div.className = "spieler";
         div.innerHTML = `
@@ -139,7 +139,7 @@
       const response = await fetch(`${scriptURL}?matchday=${matchday}`);
       const ratings = await response.json();
 
-      const bewerteteSpieler = players.filter(p => ratings[p] !== undefined);
+      const bewerteteSpieler = allPlayers.filter(p => ratings[p] !== undefined);
       bewerteteSpieler.sort((a, b) => ratings[b] - ratings[a]);
 
       const teamA = [];
