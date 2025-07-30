@@ -1,24 +1,27 @@
-<!-- index.html: Spielerbewertung und faire Teamaufteilung -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TeamFair Bewertung</title>
   <style>
     body {
       font-family: sans-serif;
       padding: 2rem;
       background-color: #f0f0f0;
+      max-width: 480px;
+      margin: auto;
     }
     h1 {
       color: #333;
+      text-align: center;
     }
     .spieler {
       margin: 0.5rem 0;
     }
     .bewertung {
       margin-left: 1rem;
+      width: 60px;
     }
     .button {
       margin-top: 1rem;
@@ -28,6 +31,8 @@
       border: none;
       cursor: pointer;
       border-radius: 4px;
+      width: 100%;
+      font-size: 1.1rem;
     }
     .button:hover {
       background-color: #45a049;
@@ -37,9 +42,19 @@
     }
     .team {
       margin-bottom: 1rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 6px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
     }
     label {
       font-weight: bold;
+      display: inline-block;
+      width: 140px;
+    }
+    select, input[type="number"] {
+      font-size: 1rem;
+      padding: 0.2rem 0.4rem;
     }
   </style>
   <script src="data.js"></script>
@@ -53,117 +68,9 @@
 
   <div id="bewertungContainer"></div>
 
-  <button class="button" onclick="saveRatings()">💾 Bewertungen speichern</button>
-  <button class="button" onclick="generateTeams()">🔀 Teams bilden</button>
+  <button class="button" id="saveBtn">💾 Bewertungen speichern</button>
+  <button class="button" id="generateBtn">🔀 Teams bilden</button>
 
   <div class="teams" id="teamsContainer"></div>
-
-  <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzMxNlPal3W6ydsgk_68uDONVLkG8jnHeWA7bCw49ua6qRhtUfUwQTuJJa5Z3JUDDK-4w/exec";
-
-    function getNextMondays(count, startDate = new Date("2025-07-28")) {
-      const mondays = [];
-      let date = new Date(startDate);
-      date.setHours(0,0,0,0);
-      date.setDate(date.getDate() + ((1 - date.getDay() + 7) % 7));
-      for (let i = 0; i < count; i++) {
-        mondays.push(new Date(date));
-        date.setDate(date.getDate() + 7);
-      }
-      return mondays;
-    }
-
-    function initMatchdays() {
-      const select = document.getElementById("matchday");
-      const mondays = getNextMondays(20);
-      mondays.forEach(date => {
-        const iso = date.toISOString().slice(0, 10);
-        const option = document.createElement("option");
-        option.value = iso;
-        option.textContent = date.toLocaleDateString("de-AT", {
-          weekday: "long",
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric"
-        });
-        select.appendChild(option);
-      });
-      select.selectedIndex = 0;
-      renderRatingInputs();
-      select.addEventListener("change", renderRatingInputs);
-    }
-
-    async function renderRatingInputs() {
-      const container = document.getElementById("bewertungContainer");
-      const matchday = document.getElementById("matchday").value;
-
-      const response = await fetch(`${scriptURL}?matchday=${matchday}`);
-      const ratings = await response.json();
-
-      container.innerHTML = "";
-      allPlayers.forEach(name => {
-        const div = document.createElement("div");
-        div.className = "spieler";
-        div.innerHTML = `
-          <label>${name}</label>
-          <input class="bewertung" type="number" min="0" max="10" step="0.5" value="${ratings[name] ?? ''}" data-name="${name}" />
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    async function saveRatings() {
-      const matchday = document.getElementById("matchday").value;
-      const inputs = document.querySelectorAll(".bewertung");
-      const ratings = {};
-      inputs.forEach(input => {
-        const name = input.dataset.name;
-        const val = parseFloat(input.value);
-        if (!isNaN(val)) ratings[name] = val;
-      });
-
-      const response = await fetch(scriptURL, {
-        method: "POST",
-        body: JSON.stringify({ matchday, ratings }),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-
-      const result = await response.text();
-      alert("Bewertungen gespeichert!");
-    }
-
-    async function generateTeams() {
-      const matchday = document.getElementById("matchday").value;
-      const response = await fetch(`${scriptURL}?matchday=${matchday}`);
-      const ratings = await response.json();
-
-      const bewerteteSpieler = allPlayers.filter(p => ratings[p] !== undefined);
-      bewerteteSpieler.sort((a, b) => ratings[b] - ratings[a]);
-
-      const teamA = [];
-      const teamB = [];
-      let sumA = 0, sumB = 0;
-
-      bewerteteSpieler.forEach(player => {
-        if (sumA <= sumB) {
-          teamA.push(player);
-          sumA += ratings[player];
-        } else {
-          teamB.push(player);
-          sumB += ratings[player];
-        }
-      });
-
-      const container = document.getElementById("teamsContainer");
-      container.innerHTML = `
-        <div class="team"><strong>Team A (Ø ${sumA.toFixed(1)}):</strong><br>${teamA.join(", ")}</div>
-        <div class="team"><strong>Team B (Ø ${sumB.toFixed(1)}):</strong><br>${teamB.join(", ")}</div>
-      `;
-    }
-
-    initMatchdays();
-  </script>
 </body>
 </html>
