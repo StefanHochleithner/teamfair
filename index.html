@@ -9,19 +9,16 @@
       font-family: sans-serif;
       padding: 2rem;
       background-color: #f0f0f0;
-      max-width: 480px;
-      margin: auto;
     }
     h1 {
       color: #333;
-      text-align: center;
     }
     .spieler {
       margin: 0.5rem 0;
     }
     .bewertung {
       margin-left: 1rem;
-      width: 60px;
+      width: 3rem;
     }
     .button {
       margin-top: 1rem;
@@ -31,8 +28,7 @@
       border: none;
       cursor: pointer;
       border-radius: 4px;
-      width: 100%;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
     .button:hover {
       background-color: #45a049;
@@ -42,19 +38,9 @@
     }
     .team {
       margin-bottom: 1rem;
-      background: white;
-      padding: 1rem;
-      border-radius: 6px;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
     }
     label {
       font-weight: bold;
-      display: inline-block;
-      width: 140px;
-    }
-    select, input[type="number"] {
-      font-size: 1rem;
-      padding: 0.2rem 0.4rem;
     }
   </style>
   <script src="data.js"></script>
@@ -68,8 +54,8 @@
 
   <div id="bewertungContainer"></div>
 
-  <button class="button" id="saveBtn">💾 Bewertungen speichern</button>
-  <button class="button" id="generateBtn">🔀 Teams bilden</button>
+  <button class="button" onclick="saveRatings()">💾 Bewertungen speichern</button>
+  <button class="button" onclick="generateTeams()">🔀 Teams bilden</button>
 
   <div class="teams" id="teamsContainer"></div>
 </body>
