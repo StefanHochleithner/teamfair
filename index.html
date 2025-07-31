@@ -10,16 +10,10 @@
       padding: 2rem;
       background-color: #f0f0f0;
     }
-    h1 {
-      color: #333;
-    }
-    .spieler {
-      margin: 0.5rem 0;
-    }
-    .bewertung {
-      margin-left: 1rem;
-      width: 3rem;
-    }
+    h1 { color: #333; }
+    .hidden { display: none; }
+    .spieler { margin: 0.5rem 0; }
+    .bewertung { margin-left: 1rem; width: 3rem; }
     .button {
       margin-top: 1rem;
       padding: 0.5rem 1rem;
@@ -30,21 +24,12 @@
       border-radius: 4px;
       font-size: 1rem;
     }
-    .button:hover {
-      background-color: #45a049;
-    }
-    .teams {
-      margin-top: 2rem;
-    }
-    .team {
-      margin-bottom: 1rem;
-    }
-    label {
-      font-weight: bold;
-    }
+    .button:hover { background-color: #45a049; }
+    .teams { margin-top: 2rem; }
+    .team { margin-bottom: 1rem; }
+    label { font-weight: bold; }
+    .checkbox-list { max-height: 15rem; overflow-y: auto; border: 1px solid #ccc; padding: 0.5rem; background: white; }
   </style>
-  <script src="data.js"></script>
-  <script src="script.js"></script>
 </head>
 <body>
   <h1>⚽ Spieler bewerten & Teams bilden</h1>
@@ -52,11 +37,23 @@
   <label for="matchday">📅 Spieltag wählen:</label>
   <select id="matchday"></select>
 
-  <div id="bewertungContainer"></div>
+  <!-- SETUP-PHASE -->
+  <div id="setupContainer" class="hidden">
+    <h2>Spieler auswählen</h2>
+    <div class="checkbox-list" id="checkboxContainer"></div>
+    <button id="btnGenerateTeams" class="button">🔀 Teams bilden</button>
+    <button id="btnSaveSelection" class="button">💾 Auswahl speichern</button>
+    <div class="teams" id="teamsContainer"></div>
+  </div>
 
-  <button class="button" onclick="saveRatings()">💾 Bewertungen speichern</button>
-  <button class="button" onclick="generateTeams()">🔀 Teams bilden</button>
+  <!-- RATING-PHASE -->
+  <div id="ratingContainer" class="hidden">
+    <h2>Bewertungen eingeben</h2>
+    <div id="bewertungContainer"></div>
+    <button id="btnSaveRatings" class="button">💾 Bewertungen speichern</button>
+  </div>
 
-  <div class="teams" id="teamsContainer"></div>
+  <script src="data.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
